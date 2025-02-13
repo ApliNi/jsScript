@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         下载推特回复数据
 // @namespace    aplini.下载推特回复数据
-// @version      0.1.6
+// @version      0.1.7
 // @description  打开推特任意账号的回复页面, 点击右上角 "开始抓取" 按钮, 等待自动结束即可
 // @author       ApliNi
 // @match        https://x.com/*
@@ -44,21 +44,22 @@ config:
 
 ==/UserConfig== */
 
-(function() {
+(async function() {
     'use strict';
+
+	const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 	
 	let map = {};
-	let userId = '??';
+	let userId = '未命名';
 
 	let imgMap = {};
 	
 	let stop = false;
+	let pause = false;
 	let lastY = 0;
 	let repeatCount = 0;
 
 	const on = async () => {
-
-		const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 		const getTweetData = async (box, type) => {
 			const url = box.querySelector('a > time')?.parentNode?.href;
@@ -173,6 +174,18 @@ config:
 			return result;
 		};
 
+		if(pause === true){
+			await new Promise(async (resolve) => {
+				while(true){
+					if(pause === false){
+						resolve();
+						break;
+					}
+					await sleep(100);
+				}
+			});
+		}
+
 		// console.time('  - [耗时]');
 
 		// 通过分隔符查找作者自己发送的推文
@@ -204,7 +217,7 @@ config:
 			if(window.scrollY === lastY && GM_getValue('config.disableAutoSave', false) === false){
 				repeatCount++;
 				if(repeatCount >= 20){
-					btn.click();
+					btn1.click();
 				}
 			}else{
 				repeatCount = 0;
@@ -221,35 +234,53 @@ config:
 		if(!stop) queueMicrotask(on);
 	};
 
+	await sleep(500);
+
 	const shadow = document.body.appendChild(document.createElement('div')).attachShadow({ mode: 'open' });
 	const root = shadow.appendChild(document.createElement('div'));
 	root.style.cssText = `
 		position: fixed;
-		top: 15px;
+		top: 51px;
 		right: 15px;
 		z-index: 9999;
 		display: none;
 	`;
-	const btn = document.createElement('div');
-	btn.textContent = '开始抓取';
-	btn.style.cssText = `
-		margin: 0 0 7px auto;
+	
+	if(GM_getValue('config.alwaysDisplayButton', false) === false){
+		// 监听 url 变化, 只在特定页面显示按钮
+		setInterval(() => {
+			const urlPath = window.location.pathname;
+			if(/^\/([^\/]+)\/with_replies/.test(urlPath)){
+				root.style.display = 'flex';
+			}else{
+				root.style.display = 'none';
+			}
+		}, 200);
+	}else{
+		root.style.display = 'flex';
+	}
+
+	const btnDefaultStyle = `
+		margin: 0px 7px 7px auto;
 		padding: 4px 7px;
-		background-color: #06b0ff;
+		background-color: #162838;
 		color: #fff;
 		border-radius: 3px;
 		cursor: default;
 		width: fit-content;
 	`;
-	root.appendChild(btn);
 
-	let scrollInterval;
+	const btn1 = document.createElement('div');
+	btn1.textContent = '开始抓取';
+	btn1.style.cssText = `
+		${btnDefaultStyle}
+		background-color: #06b0ff;
+	`;
+	root.appendChild(btn1);
+	btn1.addEventListener('click', async () => {
 
-	btn.addEventListener('click', async () => {
-
-		if(btn.classList.contains('--open')){
+		if(btn1.classList.contains('--open')){
 			stop = true;
-			clearInterval(scrollInterval);
 			const str = JSON.stringify(map, null, '\t');
 
 			const url = URL.createObjectURL(new Blob([str], { type: 'text/plain' }));
@@ -261,47 +292,43 @@ config:
 			map = {};
 			imgMap = {};
 
-			btn.classList.remove('--open');
-			btn.textContent = '开始抓取';
-			btn.style.backgroundColor = '#06b0ff';
+			btn1.classList.remove('--open');
+			btn1.textContent = '开始抓取';
+			btn1.style.backgroundColor = '#06b0ff';
 		}else{
-			btn.classList.add('--open');
-			btn.textContent = '保存数据';
-			btn.style.backgroundColor = '#F88C00';
+			btn1.classList.add('--open');
+			btn1.textContent = '下载文件';
+			btn1.style.backgroundColor = '#F88C00';
 			
 			stop = false;
 			on();
 		}
 	});
 
-	
-	if(GM_getValue('config.alwaysDisplayButton', false) === false){
-		// 监听 url 变化, 只在特定页面显示按钮
-		setInterval(() => {
-			const urlPath = window.location.pathname;
-			if(/^\/([^\/]+)\/with_replies/.test(urlPath)){
-				root.style.display = 'block';
-			}else{
-				root.style.display = 'none';
-			}
-		}, 200);
-	}else{
-		root.style.display = 'block';
-	}
+	const btn3 = document.createElement('div');
+	btn3.textContent = '暂停';
+	btn3.style.cssText = `
+		${btnDefaultStyle}
+	`;
+	root.appendChild(btn3);
+	btn3.addEventListener('click', async () => {
+		if(btn3.classList.contains('--open')){
+			pause = false;
+			btn3.classList.remove('--open');
+			btn3.textContent = '暂停';
+		}else{
+			pause = true;
+			btn3.classList.add('--open');
+			btn3.textContent = '继续';
+		}
+	});
 
 	const btn2 = document.createElement('div');
 	btn2.textContent = '导入文件';
 	btn2.style.cssText = `
-		margin: 0 0 7px auto;
-		padding: 4px 7px;
-		background-color: #162838;
-		color: #fff;
-		border-radius: 3px;
-		cursor: default;
-		width: fit-content;
+		${btnDefaultStyle}
 	`;
 	root.appendChild(btn2);
-
 	btn2.addEventListener('click', async () => {
 		const input = document.createElement('input');
 		input.type = 'file';
