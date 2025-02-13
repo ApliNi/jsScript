@@ -1,14 +1,32 @@
 // ==UserScript==
 // @name         下载推特回复数据
 // @namespace    aplini.下载推特回复数据
-// @version      0.1.0
+// @version      0.1.1
 // @description  打开推特任意账号的回复页面, 点击右上角 "开始抓取" 按钮, 等待自动结束即可
 // @author       ApliNi
 // @match        https://x.com/*
+// @grant        GM_getValue
 // ==/UserScript==
+
+/* ==UserConfig==
+
+config:
+  alwaysDisplayButton:
+    title: 始终显示按钮 (可在其他页面使用, 但没有进行测试)
+    description: 启用
+    type: checkbox
+    default: false
+  disableAutoSave:
+    title: 禁用自动保存 (开启后只能手动点击保存按钮)
+    description: 启用
+    type: checkbox
+    default: false
+
+==/UserConfig== */
 
 (function() {
     'use strict';
+    
     
     let stop = false;
     let map = {};
@@ -90,7 +108,7 @@
 
         // console.timeEnd('  - [耗时]');
 
-        await sleep(200);
+        await sleep(400);
         if(!stop) queueMicrotask(on);
     };
 
@@ -142,9 +160,9 @@
             let lastY = 0;
             let repeatCount = 0;
             scrollInterval = setInterval(() => {
-                if(window.scrollY === lastY){
+                if(window.scrollY === lastY && GM_getValue('config.disableAutoSave', false) === false){
                     repeatCount++;
-                    if(repeatCount >= 10){
+                    if(repeatCount >= 25){
                         btn.click();
                     }
                 }
@@ -158,16 +176,18 @@
         }
     });
     root.appendChild(btn);
-
-    // 监听 url 变化
-    setInterval(() => {
-        const urlPath = window.location.pathname;
-        if(/^\/([^\/]+)\/with_replies/.test(urlPath)){
-            btn.style.display = 'block';
-        }else{
-            btn.style.display = 'none';
-        }
-    }, 200);
-
-
+    
+	if(GM_getValue('config.alwaysDisplayButton', false) === false){
+		// 监听 url 变化, 只在特定页面显示按钮
+		setInterval(() => {
+			const urlPath = window.location.pathname;
+			if(/^\/([^\/]+)\/with_replies/.test(urlPath)){
+				btn.style.display = 'block';
+			}else{
+				btn.style.display = 'none';
+			}
+		}, 200);
+	}else{
+		btn.style.display = 'block';
+	}
 })();
