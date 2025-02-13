@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         下载推特回复数据
 // @namespace    aplini.下载推特回复数据
-// @version      0.1.5
+// @version      0.1.6
 // @description  打开推特任意账号的回复页面, 点击右上角 "开始抓取" 按钮, 等待自动结束即可
 // @author       ApliNi
 // @match        https://x.com/*
@@ -71,6 +71,11 @@ config:
 			const twTextBox = box.querySelector('div[data-testid="tweetText"]');
 			const twPhotoList = [...box.querySelectorAll('div[data-testid="tweetPhoto"]')];
 
+			if(twTextBox){
+				twTextBox.style.backgroundColor = '#355f8430';
+				twTextBox.style.outline = `3px solid #355f8430`;
+			}
+
 			const photos = [];
 			for(const photo of twPhotoList){
 				const video = photo.querySelector('video[poster^="http"]');
@@ -122,6 +127,8 @@ config:
 
 					text: twTextBox?.innerText || null,
 					photos: photos,
+
+					indicator: box.querySelector('div[role="group"][aria-label]').getAttribute('aria-label'),
 				},
 			};
 
@@ -283,7 +290,7 @@ config:
 	}
 
 	const btn2 = document.createElement('div');
-	btn2.textContent = '加载数据';
+	btn2.textContent = '导入文件';
 	btn2.style.cssText = `
 		margin: 0 0 7px auto;
 		padding: 4px 7px;
