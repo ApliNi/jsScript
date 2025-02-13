@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         下载推特回复数据
 // @namespace    aplini.下载推特回复数据
-// @version      0.1.4
+// @version      0.1.5
 // @description  打开推特任意账号的回复页面, 点击右上角 "开始抓取" 按钮, 等待自动结束即可
 // @author       ApliNi
 // @match        https://x.com/*
@@ -60,9 +60,12 @@ config:
 
 		const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-		const getTweetData = async (box) => {
+		const getTweetData = async (box, type) => {
 			const url = box.querySelector('a > time')?.parentNode?.href;
 			if(!url) return null;
+
+			box.style.outline = `2px dashed #7d7d7d`;
+			box.style.outlineOffset = '-6px';
 
 			const nameBox = box.querySelector('div[data-testid="User-Name"]');
 			const twTextBox = box.querySelector('div[data-testid="tweetText"]');
@@ -107,7 +110,7 @@ config:
 				}
 			}
 
-			return {
+			const data = {
 				url: url,
 				data: {
 					time: box.querySelector('a > time').getAttribute('datetime'),
@@ -121,6 +124,14 @@ config:
 					photos: photos,
 				},
 			};
+
+			if(type === 'main'){
+				box.style.outline = `2px dashed #F88C00`;
+			}else if(type ==='reply'){
+				box.style.outline = `2px dashed #06b0ff`;
+			}
+			
+			return data;
 		};
 
 		const deepMergeObject = (target, source = {}) => {
@@ -160,7 +171,7 @@ config:
 		// 通过分隔符查找作者自己发送的推文
 		const boxList = [...document.querySelectorAll('div > div[data-testid="cellInnerDiv"] > div[role="separator"]')].map(el => el.parentNode);
 		for(const box of boxList){
-			const d1 = await getTweetData(box);
+			const d1 = await getTweetData(box, 'main');
 			if(!d1) continue;
 			map[d1.url] = deepMergeObject(map[d1.url], d1.data);
 			userId = d1.data.id;
@@ -170,9 +181,10 @@ config:
 			while(true){
 				upBox = upBox.previousElementSibling;
 				if(upBox && !upBox.querySelector('& > div[role="separator"]')){
-					const d2 = await getTweetData(upBox);
-					if(!d2) break;
-					map[d1.url].for[d2.url] = deepMergeObject(map[d1.url].for[d2.url], d2.data);
+					const d2 = await getTweetData(upBox, 'reply');
+					if(d2){
+						map[d1.url].for[d2.url] = deepMergeObject(map[d1.url].for[d2.url], d2.data);
+					}
 				}else{
 					break;
 				}
