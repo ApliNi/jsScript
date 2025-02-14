@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         下载推特回复数据
 // @namespace    aplini.下载推特回复数据
-// @version      0.2.0
+// @version      0.2.1
 // @description  打开推特任意账号的回复页面, 点击右上角 "开始抓取" 按钮, 等待自动结束即可
 // @author       ApliNi
 // @match        https://x.com/*
@@ -38,19 +38,19 @@ config:
   scrollYOffset:
     title: 每次滚动的距离 (像素)
     type: number
-    default: 700
+    default: 500
 Function:
   delay:
     title: 此页面功能可能被限制, 因此需要单独添加延迟时间 (毫秒)
     type: number
     default: 1200
   tweet_main:
-    title: 为每条橙色框中的推文 (可能被限制)
+    title: 为每条橙色框中的推文
     type: select
     default: 无
     values: [无, 点赞, 取消点赞, 转推, 取消转推, 添加书签, 移出书签]
   tweet_reply:
-    title: 为每条蓝色框中的推文 (可能被限制)
+    title: 为每条蓝色框中的推文
     type: select
     default: 无
     values: [无, 点赞, 取消点赞, 转推, 取消转推, 添加书签, 移出书签]
@@ -274,7 +274,7 @@ Function:
 			}
 			lastY = window.scrollY;
 			window.scrollBy({
-				top: GM_getValue('config.scrollYOffset', 700),
+				top: GM_getValue('config.scrollYOffset', 500),
 				left: 0,
 				behavior:'smooth',
 			});
