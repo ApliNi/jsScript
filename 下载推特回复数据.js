@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         下载推特回复数据
 // @namespace    aplini.下载推特回复数据
-// @version      0.2.1
+// @version      0.2.2
 // @description  打开推特任意账号的回复页面, 点击右上角 "开始抓取" 按钮, 等待自动结束即可
 // @author       ApliNi
 // @match        https://x.com/*
@@ -152,38 +152,52 @@ Function:
 				box.style.outline = `2px dashed #06b0ff`;
 			}
 
-			const func = GM_getValue(`Function.tweet_${type}`, '无');
-			if(true !== '无'){
-				await sleep(GM_getValue('Function.delay', 1200));
-			}
-			switch(func){
+			const delay = GM_getValue(`Function.delay`, 1200);
+			let btn = null;
+			switch(GM_getValue(`Function.tweet_${type}`, '无')){
 				case '点赞':
-					box.querySelector('button[data-testid="like"]')?.click();
+					btn = box.querySelector('button[data-testid="like"]');
+					if(btn){
+						await sleep(delay);
+						btn.click();
+					}
 					break;
 				case '取消点赞':
-					box.querySelector('button[data-testid="unlike"]')?.click();
+					btn = box.querySelector('button[data-testid="unlike"]');
+					if(btn){
+						await sleep(delay);
+						btn.click();
+					}
 					break;
 				case '转推':
-					const btn = box.querySelector('button[data-testid="retweet"]');
+					btn = box.querySelector('button[data-testid="retweet"]');
 					if(btn){
 						btn.click();
-						await sleep(100);
+						await sleep(delay);
 						document.querySelector('div[data-testid="retweetConfirm"]')?.click();
 					}
 					break;
 				case '取消转推':
-					const btn2 = box.querySelector('button[data-testid="unretweet"]');
-					if(btn2){
-						btn2.click();
-						await sleep(100);
+					btn = box.querySelector('button[data-testid="unretweet"]');
+					if(btn){
+						btn.click();
+						await sleep(delay);
 						document.querySelector('div[data-testid="unretweetConfirm"]')?.click();
 					}
 					break;
 				case '添加书签':
-					box.querySelector('button[data-testid="bookmark"]')?.click();
+					btn = box.querySelector('button[data-testid="bookmark"]');
+					if(btn){
+						await sleep(delay);
+						btn.click();
+					}
 					break;
 				case '移出书签':
-					box.querySelector('button[data-testid="removeBookmark"]')?.click();
+					btn = box.querySelector('button[data-testid="removeBookmark"]');
+					if(btn){
+						await sleep(delay);
+						btn.click();
+					}
 					break;
 				default:
 					break;
