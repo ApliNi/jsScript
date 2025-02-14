@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         下载推特回复数据
 // @namespace    aplini.下载推特回复数据
-// @version      0.1.7
+// @version      0.2.0
 // @description  打开推特任意账号的回复页面, 点击右上角 "开始抓取" 按钮, 等待自动结束即可
 // @author       ApliNi
 // @match        https://x.com/*
@@ -27,20 +27,33 @@ config:
     type: checkbox
     default: false
   saveImageBase64:
-    title: 同时保存图片的 Base64 (这可能导致文件过大或浏览器崩溃?)
+    title: 同时保存图片的 Base64 (这可能导致文件过大)
     description: 启用
     type: checkbox
     default: false
   sleep:
     title: 延迟时间 (毫秒)
-    description: 延迟时间
     type: number
     default: 500
   scrollYOffset:
     title: 每次滚动的距离 (像素)
-    description: 距离
     type: number
     default: 700
+Function:
+  delay:
+    title: 此页面功能可能被限制, 因此需要单独添加延迟时间 (毫秒)
+    type: number
+    default: 1200
+  tweet_main:
+    title: 为每条橙色框中的推文 (可能被限制)
+    type: select
+    default: 无
+    values: [无, 点赞, 取消点赞, 转推, 取消转推, 添加书签, 移出书签]
+  tweet_reply:
+    title: 为每条蓝色框中的推文 (可能被限制)
+    type: select
+    default: 无
+    values: [无, 点赞, 取消点赞, 转推, 取消转推, 添加书签, 移出书签]
 
 ==/UserConfig== */
 
@@ -137,6 +150,43 @@ config:
 				box.style.outline = `2px dashed #F88C00`;
 			}else if(type ==='reply'){
 				box.style.outline = `2px dashed #06b0ff`;
+			}
+
+			const func = GM_getValue(`Function.tweet_${type}`, '无');
+			if(true !== '无'){
+				await sleep(GM_getValue('Function.delay', 1200));
+			}
+			switch(func){
+				case '点赞':
+					box.querySelector('button[data-testid="like"]')?.click();
+					break;
+				case '取消点赞':
+					box.querySelector('button[data-testid="unlike"]')?.click();
+					break;
+				case '转推':
+					const btn = box.querySelector('button[data-testid="retweet"]');
+					if(btn){
+						btn.click();
+						await sleep(100);
+						document.querySelector('div[data-testid="retweetConfirm"]')?.click();
+					}
+					break;
+				case '取消转推':
+					const btn2 = box.querySelector('button[data-testid="unretweet"]');
+					if(btn2){
+						btn2.click();
+						await sleep(100);
+						document.querySelector('div[data-testid="unretweetConfirm"]')?.click();
+					}
+					break;
+				case '添加书签':
+					box.querySelector('button[data-testid="bookmark"]')?.click();
+					break;
+				case '移出书签':
+					box.querySelector('button[data-testid="removeBookmark"]')?.click();
+					break;
+				default:
+					break;
 			}
 			
 			return data;
